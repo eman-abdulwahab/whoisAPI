@@ -1,23 +1,23 @@
-from flask import Flask, request
 import whois
 from datetime import datetime
 from opensearchpy import OpenSearch
 from flask_restful import Resource
-from src.helpers import format_response
-from src.app import app
+from src import format_response
+from src import app
 
 class Domain(Resource):
     def get(self, domain):
         if domain is None:
             return format_response(success=False, message='Please enter a domain name', code=400)
 
-        # todo: check if valid domain
+        # TODO: check if valid domain
 
         # get domain data
         domain = domain.lower()
-        data = whois.whois(domain)  # TODO: find a better module
+        data = whois.whois(domain)  
 
-        # TODO: fix error
+        # TODO: move logic to elasticsearch service class
+        # TODO: config for dev and prod
         # Create OpenSearch client
         host = app.config['OPENSEARCH_HOST']
         port = app.config['OPENSEARCH_PORT']
