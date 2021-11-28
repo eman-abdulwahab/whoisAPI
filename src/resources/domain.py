@@ -1,38 +1,27 @@
 import whois
+import validators
 from datetime import datetime
-from opensearchpy import OpenSearch
 from flask_restful import Resource
 from src import format_response
-from src import app
+from src import OpenSearchWrapper
+
 
 class Domain(Resource):
     def get(self, domain):
         if domain is None:
             return format_response(success=False, message='Please enter a domain name', code=400)
 
-        # TODO: check if valid domain
-
         # get domain data
         domain = domain.lower()
-        data = whois.whois(domain)  
+        data = whois.whois(domain)
 
-        # TODO: move logic to elasticsearch service class
-        # TODO: config for dev and prod
-        # Create OpenSearch client
-        host = app.config['OPENSEARCH_HOST']
-        port = app.config['OPENSEARCH_PORT']
-        auth = (app.config['OPENSEARCH_USER'], app.config['OPENSEARCH_PASSWORD'])  # For testing only
+        # check if valid domain
+        if not validators.domain(domain):
+            return format_response(success=False, message='Please enter a valid domain name', code=400)
+
+        # Create OpenSearch client from wrapper
         index_name = 'whois-searches'
-
-        client = OpenSearch(
-            hosts=[{'host': host, 'port': port}],
-            http_compress=True,  # enables gzip compression for request bodies
-            http_auth=auth,
-            use_ssl=True,
-            verify_certs=False,
-            ssl_assert_hostname=False,
-            ssl_show_warn=False,
-        )
+        client = OpenSearchWrapper.create_client()
 
         # check if domain already exists
         exists = client.exists(index_name, domain)
